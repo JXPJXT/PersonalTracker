@@ -1,10 +1,11 @@
 import { getUser, getAllEntries } from "@/lib/actions";
-import { redirect } from "next/navigation";
 import ReportsClient from "./ReportsClient";
+import { isAuthenticated } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function ReportsPage() {
+  if (!(await isAuthenticated())) redirect("/login");
   const user = await getUser();
-  if (!user) redirect("/");
 
   const entries = await getAllEntries(user.id);
 

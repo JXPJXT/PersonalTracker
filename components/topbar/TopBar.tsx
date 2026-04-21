@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTimerStore } from "@/lib/store";
 import { createTimeEntry, stopTimerEntry } from "@/lib/actions";
 import { formatDuration } from "@/lib/utils";
-import { Play, Square, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Play, Square, ChevronLeft, ChevronRight, Calendar, Moon, Timer, Coffee } from "lucide-react";
 import {
   format,
   endOfWeek,
@@ -26,6 +26,8 @@ interface TopBarProps {
   currentWeekStart: Date;
   onWeekChange: (date: Date) => void;
   subjects: Subject[];
+  viewMode: "calendar" | "list";
+  setViewMode: (mode: "calendar" | "list") => void;
 }
 
 export default function TopBar({
@@ -33,6 +35,8 @@ export default function TopBar({
   currentWeekStart,
   onWeekChange,
   subjects,
+  viewMode,
+  setViewMode,
 }: TopBarProps) {
   const store = useTimerStore();
   const router = useRouter();
@@ -46,16 +50,56 @@ export default function TopBar({
     setMounted(true);
   }, []);
 
+  const targetSeconds = store.pomodoroActive 
+    ? (store.pomodoroPhase === "work" ? store.pomodoroWorkTime * 60 : store.pomodoroBreakTime * 60)
+    : 0;
+
   // Timer tick
   useEffect(() => {
     if (!store.isRunning || !store.startedAt) return;
     // Set initial elapsed immediately
     setElapsed(Math.floor((Date.now() - store.startedAt) / 1000));
     const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - store.startedAt!) / 1000));
+      const e = Math.floor((Date.now() - store.startedAt!) / 1000);
+      setElapsed(e);
+      
+      if (store.pomodoroActive && targetSeconds > 0 && e >= targetSeconds) {
+        clearInterval(interval);
+        handlePomodoroComplete();
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, [store.isRunning, store.startedAt]);
+  }, [store.isRunning, store.startedAt, store.pomodoroActive, targetSeconds]);
+
+  const handlePomodoroComplete = async () => {
+    try {
+      if (store.tempEntryId && store.pomodoroPhase === "work") {
+        await stopTimerEntry(store.tempEntryId);
+      } else if (store.tempEntryId && store.pomodoroPhase === "break") {
+        // delete break entry if we don't want to log breaks, but for now we log it or just stop it
+        await stopTimerEntry(store.tempEntryId);
+      }
+      store.stop();
+      setElapsed(0);
+      
+      // Play sound
+      try {
+        const audio = new Audio("https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=ding-126626.mp3");
+        audio.play();
+      } catch (e) {}
+
+      if (store.pomodoroPhase === "work") {
+        store.setPomodoroPhase("break");
+        store.setDescription("Break time");
+      } else {
+        store.setPomodoroPhase("work");
+        store.setDescription("");
+      }
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleStart = useCallback(async () => {
     if (starting) return;
@@ -129,10 +173,15 @@ export default function TopBar({
         e.preventDefault();
         router.push("/subjects");
       }
+      // F key for focus mode
+      if ((e.key === "f" || e.key === "F") && store.isRunning) {
+        e.preventDefault();
+        store.enableFocusMode();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [currentWeekStart, onWeekChange, router]);
+  }, [currentWeekStart, onWeekChange, router, store]);
 
   if (!mounted) {
     return (
@@ -239,14 +288,51 @@ export default function TopBar({
 
       {/* View Tabs */}
       <div className="flex items-center gap-1 bg-[#2a2a2a] rounded-lg p-0.5">
-        <span className="view-tab active">Calendar</span>
-        <span className="view-tab">List View</span>
+        <button 
+          onClick={() => setViewMode("calendar")}
+          className={`view-tab ${viewMode === "calendar" ? "active" : ""}`}
+        >
+          Calendar
+        </button>
+        <button 
+          onClick={() => setViewMode("list")}
+          className={`view-tab ${viewMode === "list" ? "active" : ""}`}
+        >
+          List View
+        </button>
       </div>
 
       {/* Timer Display */}
       <div className="flex items-center gap-3 ml-2">
-        <span className="text-sm font-mono text-gray-300 tabular-nums min-w-[70px] text-right">
-          {store.isRunning ? formatDuration(elapsed) : "0:00:00"}
+        {/* Pomodoro Toggle */}
+        <button
+          onClick={() => store.togglePomodoro()}
+          className={`p-2 rounded-lg transition-colors group ${store.pomodoroActive ? 'bg-[#ff4757]/20 text-[#ff4757]' : 'bg-[#2a2a2a] hover:bg-[#333] text-gray-400'} ${store.isRunning ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={store.isRunning}
+          title={store.pomodoroActive ? "Disable Pomodoro Mode" : "Enable Pomodoro Mode"}
+        >
+          {store.pomodoroPhase === "break" && store.pomodoroActive ? (
+            <Coffee size={14} className={store.pomodoroActive ? "" : "group-hover:text-white transition-colors"} />
+          ) : (
+            <Timer size={14} className={store.pomodoroActive ? "" : "group-hover:text-white transition-colors"} />
+          )}
+        </button>
+        
+        {store.isRunning && (
+          <button
+            onClick={() => store.enableFocusMode()}
+            className="p-2 rounded-lg bg-[#2a2a2a] hover:bg-[#333] transition-colors group"
+            title="Enter Focus Mode (F)"
+          >
+            <Moon size={14} className="text-gray-400 group-hover:text-[#7c3aed] transition-colors" />
+          </button>
+        )}
+        <span className={`text-sm font-mono tabular-nums min-w-[70px] text-right ${store.pomodoroActive ? (store.pomodoroPhase === 'break' ? 'text-green-400' : 'text-[#ff4757]') : 'text-gray-300'}`}>
+          {store.isRunning 
+            ? (store.pomodoroActive 
+                ? formatDuration(Math.max(0, targetSeconds - elapsed)) 
+                : formatDuration(elapsed)) 
+            : (store.pomodoroActive ? formatDuration(targetSeconds) : "0:00:00")}
         </span>
         {store.isRunning ? (
           <button

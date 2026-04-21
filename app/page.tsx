@@ -1,46 +1,48 @@
-import { getUser, getEntriesForWeek } from "@/lib/actions";
-import { startOfWeek, endOfWeek } from "date-fns";
-import OnboardingModal from "@/components/OnboardingModal";
-import CalendarPageClient from "@/components/calendar/CalendarPageClient";
+import { getUser, getTasks, getDueFlashcards, getHabits, getDailyLogs } from "@/lib/actions";
+import { isAuthenticated } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import DashboardClient from "./DashboardClient";
 
-export default async function HomePage() {
+export default async function DashboardPage() {
+  if (!(await isAuthenticated())) redirect("/login");
   const user = await getUser();
 
-  if (!user) {
-    return <OnboardingModal />;
-  }
+  const [allTasks, dueCards, habits, dailyLogs] = await Promise.all([
+    getTasks(user.id),
+    getDueFlashcards(user.id),
+    getHabits(user.id),
+    getDailyLogs(user.id)
+  ]);
 
-  const now = new Date();
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-
-  const entries = await getEntriesForWeek(
-    user.id,
-    weekStart.toISOString(),
-    weekEnd.toISOString()
-  );
-
-  const serializedEntries = entries.map((e) => ({
-    ...e,
-    start: e.start.toISOString(),
-    stop: e.stop?.toISOString() || null,
-    subject: e.subject
-      ? { id: e.subject.id, name: e.subject.name, color: e.subject.color }
+  // Pass necessary data to the dashboard
+  const activeTasks = allTasks.filter(t => !t.completed).map((t) => ({
+    id: t.id,
+    title: t.title,
+    priority: t.priority,
+    completed: t.completed,
+    dueDate: t.dueDate?.toISOString() || null,
+    subject: t.subject
+      ? { id: t.subject.id, name: t.subject.name, color: t.subject.color }
       : null,
+  })).slice(0, 10); // Show up to 10 tasks
+  
+  const serializedDueCards = dueCards.map(c => ({
+    id: c.id,
+    deckName: c.deck.name,
+    subjectColor: c.deck.subject?.color || "#666"
   }));
 
-  const subjects = user.subjects.map((s) => ({
-    id: s.id,
-    name: s.name,
-    color: s.color,
-  }));
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayJournal = dailyLogs.find(l => l.date === todayStr);
 
   return (
-    <CalendarPageClient
-      userId={user.id}
-      subjects={subjects}
-      initialEntries={serializedEntries}
-      initialWeekStart={weekStart.toISOString()}
+    <DashboardClient 
+      userId={user.id} 
+      userName={user.name!}
+      activeTasks={activeTasks}
+      dueCards={serializedDueCards}
+      habits={habits}
+      hasJournalToday={!!todayJournal}
     />
   );
 }

@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { startOfWeek, endOfWeek, addWeeks } from "date-fns";
+import { startOfWeek, endOfWeek } from "date-fns";
 import TopBar from "@/components/topbar/TopBar";
 import CalendarGrid from "@/components/calendar/CalendarGrid";
+import ListView from "@/components/calendar/ListView";
+import SmartSuggestions from "@/components/suggestions/SmartSuggestions";
+import ExamCountdown from "@/components/suggestions/ExamCountdown";
 import { getEntriesForWeek } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 
@@ -23,11 +26,21 @@ interface TimeEntryData {
   subject: { id: string; name: string; color: string } | null;
 }
 
+interface TaskData {
+  id: string;
+  title: string;
+  priority: string;
+  completed: boolean;
+  dueDate: string | null;
+  subject: Subject | null;
+}
+
 interface CalendarPageClientProps {
   userId: string;
   subjects: Subject[];
   initialEntries: TimeEntryData[];
   initialWeekStart: string;
+  tasks: TaskData[];
 }
 
 export default function CalendarPageClient({
@@ -35,9 +48,11 @@ export default function CalendarPageClient({
   subjects,
   initialEntries,
   initialWeekStart,
+  tasks,
 }: CalendarPageClientProps) {
   const [weekStart, setWeekStart] = useState(new Date(initialWeekStart));
   const [entries, setEntries] = useState<TimeEntryData[]>(initialEntries);
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const router = useRouter();
 
   const fetchEntries = useCallback(
@@ -93,15 +108,33 @@ export default function CalendarPageClient({
         currentWeekStart={weekStart}
         onWeekChange={handleWeekChange}
         subjects={subjects}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
       />
-      <div className="flex-1 overflow-hidden">
-        <CalendarGrid
-          weekStart={weekStart}
-          entries={entries}
-          userId={userId}
-          subjects={subjects}
-          onRefresh={handleRefresh}
-        />
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          {viewMode === "calendar" ? (
+            <CalendarGrid
+              weekStart={weekStart}
+              entries={entries}
+              userId={userId}
+              subjects={subjects}
+              tasks={tasks}
+              onRefresh={handleRefresh}
+            />
+          ) : (
+            <ListView
+              weekStart={weekStart}
+              entries={entries}
+              onRefresh={handleRefresh}
+            />
+          )}
+        </div>
+        {/* Right sidebar with Smart Suggestions and Countdown */}
+        <div className="w-[280px] border-l border-[#2a2a2a] bg-[#1a1a1a] p-4 overflow-y-auto shrink-0 hidden xl:block space-y-6">
+          <ExamCountdown tasks={tasks} />
+          <SmartSuggestions userId={userId} />
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,11 @@
 import { getUser, getSubjects } from "@/lib/actions";
-import { redirect } from "next/navigation";
 import SubjectsClient from "./SubjectsClient";
+import { isAuthenticated } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function SubjectsPage() {
+  if (!(await isAuthenticated())) redirect("/login");
   const user = await getUser();
-  if (!user) redirect("/");
 
   const subjects = await getSubjects(user.id);
 

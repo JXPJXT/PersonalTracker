@@ -10,10 +10,36 @@ import {
   Settings,
   LayoutGrid,
   ListTodo,
+  Layers,
+  Moon,
+  LogOut,
+  BookMarked,
+  Book,
+  FileText,
+  Calendar,
 } from "lucide-react";
+import { useTimerStore } from "@/lib/store";
+import GoalWidget from "./GoalWidget";
+import SettingsModal from "./SettingsModal";
+import { useState } from "react";
+import { logout } from "@/lib/auth";
 
-export default function Sidebar({ userName }: { userName: string }) {
+export default function Sidebar({ 
+  user,
+  goals,
+  initialTodayTime,
+  initialWeekTime
+}: { 
+  user: { id: string; name: string };
+  goals: any[];
+  initialTodayTime: number;
+  initialWeekTime: number;
+}) {
   const pathname = usePathname();
+  const store = useTimerStore();
+  const [showSettings, setShowSettings] = useState(false);
+
+  const userName = user?.name || "User";
 
   const initials = userName
     .split(" ")
@@ -45,6 +71,13 @@ export default function Sidebar({ userName }: { userName: string }) {
           className={`sidebar-item ${pathname === "/" ? "active" : ""}`}
         >
           <LayoutGrid size={16} />
+          <span>Dashboard</span>
+        </Link>
+        <Link
+          href="/calendar"
+          className={`sidebar-item ${pathname === "/calendar" ? "active" : ""}`}
+        >
+          <Calendar size={16} />
           <span>Calendar</span>
         </Link>
 
@@ -74,6 +107,57 @@ export default function Sidebar({ userName }: { userName: string }) {
           <ListTodo size={16} />
           <span>Tasks</span>
         </Link>
+
+        {/* LEARN */}
+        <div className="sidebar-section-label mt-2">Learn</div>
+        <Link
+          href="/notes"
+          className={`sidebar-item ${pathname?.startsWith("/notes") ? "active" : ""}`}
+        >
+          <FileText size={16} />
+          <span>Notes</span>
+        </Link>
+        <Link
+          href="/flashcards"
+          className={`sidebar-item ${pathname === "/flashcards" ? "active" : ""}`}
+        >
+          <Layers size={16} />
+          <span>Flashcards</span>
+        </Link>
+        <Link
+          href="/resources"
+          className={`sidebar-item ${pathname === "/resources" ? "active" : ""}`}
+        >
+          <BookMarked size={16} />
+          <span>Resources</span>
+        </Link>
+
+        {/* LIFE */}
+        <div className="sidebar-section-label mt-2">Life</div>
+        <Link
+          href="/journal"
+          className={`sidebar-item ${pathname === "/journal" ? "active" : ""}`}
+        >
+          <Book size={16} />
+          <span>Journal</span>
+        </Link>
+        <Link
+          href="/habits"
+          className={`sidebar-item ${pathname === "/habits" ? "active" : ""}`}
+        >
+          <Moon size={16} />
+          <span>Sleep</span>
+        </Link>
+        
+        {/* GOALS */}
+        {user?.id && (
+          <GoalWidget 
+            userId={user.id} 
+            initialGoals={goals}
+            initialTodayTime={initialTodayTime}
+            initialWeekTime={initialWeekTime}
+          />
+        )}
       </nav>
 
       {/* Bottom */}
@@ -83,9 +167,24 @@ export default function Sidebar({ userName }: { userName: string }) {
             {initials}
           </div>
           <span className="text-xs text-gray-400 truncate flex-1">{userName}</span>
-          <Settings size={14} className="text-gray-500 cursor-pointer hover:text-white transition-colors" />
+          <Settings 
+            size={14} 
+            className="text-gray-500 cursor-pointer hover:text-white transition-colors" 
+            onClick={() => setShowSettings(true)}
+          />
+          <LogOut
+            id="logout-btn"
+            size={14}
+            className="text-gray-500 cursor-pointer hover:text-red-400 transition-colors"
+            onClick={() => logout()}
+          />
         </div>
       </div>
+
+      {showSettings && user?.id && (
+        <SettingsModal userId={user.id} onClose={() => setShowSettings(false)} />
+      )}
     </aside>
   );
 }
+

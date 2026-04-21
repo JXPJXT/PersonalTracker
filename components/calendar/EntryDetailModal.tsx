@@ -1,14 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { updateTimeEntry, deleteTimeEntry } from "@/lib/actions";
-import { X, Trash2, Clock, StickyNote } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  updateTimeEntry,
+  deleteTimeEntry,
+  getTasksForSession,
+  linkTaskToSession,
+  unlinkTaskFromSession,
+} from "@/lib/actions";
+import { X, Trash2, Clock, StickyNote, Link2, Unlink } from "lucide-react";
 import { format, getHours, getMinutes, setHours, setMinutes } from "date-fns";
 
 interface Subject {
   id: string;
   name: string;
   color: string;
+}
+
+interface TaskData {
+  id: string;
+  title: string;
+  priority: string;
+  completed: boolean;
+  subject: Subject | null;
 }
 
 interface EntryDetailModalProps {
@@ -22,13 +36,21 @@ interface EntryDetailModalProps {
     subject: Subject | null;
   };
   subjects: Subject[];
+  tasks?: TaskData[];
   onClose: () => void;
   onUpdated: () => void;
 }
 
+const PRIORITY_COLORS = {
+  HIGH: "text-red-400",
+  MEDIUM: "text-amber-400",
+  LOW: "text-blue-400",
+};
+
 export default function EntryDetailModal({
   entry,
   subjects,
+  tasks = [],
   onClose,
   onUpdated,
 }: EntryDetailModalProps) {
@@ -44,6 +66,36 @@ export default function EntryDetailModal({
   const [endMin, setEndMin] = useState(stopDate ? getMinutes(stopDate) : 0);
   const [saving, setSaving] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+
+  // Task linking state
+  const [linkedTasks, setLinkedTasks] = useState<TaskData[]>([]);
+  const [showTaskPicker, setShowTaskPicker] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+
+  // Load linked tasks
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const linked = await getTasksForSession(entry.id);
+        setLinkedTasks(
+          linked.map((t) => ({
+            id: t.id,
+            title: t.title,
+            priority: t.priority,
+            completed: t.completed,
+            subject: t.subject
+              ? { id: t.subject.id, name: t.subject.name, color: t.subject.color }
+              : null,
+          }))
+        );
+      } catch {
+        // ignore
+      } finally {
+        setLoadingTasks(false);
+      }
+    };
+    load();
+  }, [entry.id]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -68,9 +120,28 @@ export default function EntryDetailModal({
     onUpdated();
   };
 
+  const handleLinkTask = async (taskId: string) => {
+    await linkTaskToSession(taskId, entry.id);
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      setLinkedTasks((prev) => [...prev, task]);
+    }
+    setShowTaskPicker(false);
+  };
+
+  const handleUnlinkTask = async (taskId: string) => {
+    await unlinkTaskFromSession(taskId, entry.id);
+    setLinkedTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
   const durationMinutes = stopDate
     ? Math.round((stopDate.getTime() - startDate.getTime()) / 60000)
     : null;
+
+  const linkedTaskIds = new Set(linkedTasks.map((t) => t.id));
+  const availableTasks = tasks.filter(
+    (t) => !linkedTaskIds.has(t.id) && !t.completed
+  );
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -255,6 +326,100 @@ export default function EntryDetailModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Session notes, key takeaways, things to review..."
             />
+          </div>
+
+          {/* Linked Tasks */}
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 flex items-center gap-1.5">
+              <Link2 size={12} />
+              Linked Tasks
+            </label>
+
+            {loadingTasks ? (
+              <div className="text-xs text-gray-600 py-2">Loading tasks...</div>
+            ) : (
+              <>
+                {/* Linked task chips */}
+                {linkedTasks.length > 0 && (
+                  <div className="space-y-1.5 mb-2">
+                    {linkedTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] rounded-lg group"
+                      >
+                        <span
+                          className={`text-[10px] font-medium ${
+                            PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS] || "text-gray-400"
+                          }`}
+                        >
+                          {task.priority}
+                        </span>
+                        <span className="text-sm text-white flex-1 truncate">
+                          {task.title}
+                        </span>
+                        {task.subject && (
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ backgroundColor: task.subject.color }}
+                          />
+                        )}
+                        <button
+                          onClick={() => handleUnlinkTask(task.id)}
+                          className="p-1 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100 transition-all"
+                          title="Unlink task"
+                        >
+                          <Unlink size={11} className="text-red-400" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add task link */}
+                {showTaskPicker ? (
+                  <div className="bg-[#1a1a1a] rounded-lg border border-[#333] p-2 max-h-[160px] overflow-y-auto">
+                    {availableTasks.length > 0 ? (
+                      availableTasks.map((task) => (
+                        <button
+                          key={task.id}
+                          onClick={() => handleLinkTask(task.id)}
+                          className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[#2a2a2a] transition-colors"
+                        >
+                          <span
+                            className={`text-[10px] ${
+                              PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS] || "text-gray-400"
+                            }`}
+                          >
+                            •
+                          </span>
+                          <span className="text-xs text-gray-300 truncate">
+                            {task.title}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-xs text-gray-600 text-center py-2">
+                        No tasks available to link
+                      </p>
+                    )}
+                    <button
+                      onClick={() => setShowTaskPicker(false)}
+                      className="w-full text-xs text-gray-500 hover:text-white py-1 mt-1 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowTaskPicker(true)}
+                    className="text-xs text-[#7c3aed] hover:text-[#a78bfa] transition-colors flex items-center gap-1"
+                  >
+                    <Link2 size={11} />
+                    Link a task to this session
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">

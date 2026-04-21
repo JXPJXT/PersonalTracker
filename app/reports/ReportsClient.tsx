@@ -18,6 +18,11 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from "recharts";
 import { formatHoursMinutes } from "@/lib/utils";
 import { Flame, Clock, BookOpen, TrendingUp } from "lucide-react";
@@ -88,6 +93,41 @@ export default function ReportsClient({
       }))
       .sort((a, b) => b.hours - a.hours);
   }, [weeklyEntries]);
+
+  // Weekly trend logic (last 6 weeks)
+  const lineChartData = useMemo(() => {
+    const data = [];
+    const weeksToShow = 6;
+    for (let i = weeksToShow - 1; i >= 0; i--) {
+      const wStart = subDays(weekStart, i * 7);
+      const wEnd = endOfWeek(wStart, { weekStartsOn: 1 });
+      const weekLabel = format(wStart, "MMM d");
+      
+      const weekPeriodEntries = entries.filter(e => isWithinInterval(new Date(e.start), {start: wStart, end: wEnd}));
+      
+      const weekEntryObj: Record<string, any> = { name: weekLabel };
+      
+      // Ensure all subjects explicitly exist so lines drawn continuously 
+      subjects.forEach(s => {
+        weekEntryObj[s.name] = 0;
+      });
+
+      for(const entry of weekPeriodEntries) {
+         if (entry.subject) {
+            const current = weekEntryObj[entry.subject.name] || 0;
+            weekEntryObj[entry.subject.name] = current + (entry.durationInSeconds || 0) / 3600;
+         }
+      }
+      
+      // Round everything to 1 decimal
+      subjects.forEach(s => {
+        weekEntryObj[s.name] = Math.round(weekEntryObj[s.name] * 10) / 10;
+      });
+
+      data.push(weekEntryObj);
+    }
+    return data;
+  }, [entries, weekStart, subjects]);
 
   // Heatmap data (last 90 days)
   const heatmapData = useMemo(() => {
@@ -210,7 +250,7 @@ export default function ReportsClient({
                     fontSize: "12px",
                     color: "#fff",
                   }}
-                  formatter={(value: number) => [
+                  formatter={(value: any) => [
                     `${value} hours`,
                     "",
                   ]}
@@ -228,6 +268,35 @@ export default function ReportsClient({
             No data for this week yet
           </div>
         )}
+      </div>
+
+      {/* Subject Trend Line Chart */}
+      <div className="bg-[#222] rounded-xl border border-[#2a2a2a] p-6 mb-8">
+        <h2 className="text-sm font-medium text-white mb-4">Subject Trend (Last 6 Weeks)</h2>
+        <div className="h-[280px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={lineChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+              <XAxis dataKey="name" stroke="#666" tick={{fill: '#666', fontSize: 12}} tickLine={false} axisLine={false} />
+              <YAxis stroke="#666" tick={{fill: '#666', fontSize: 12}} tickLine={false} axisLine={false} />
+              <Tooltip 
+                contentStyle={{ background: "#333", border: "1px solid #444", borderRadius: "8px", fontSize: "12px", color: "#fff" }}
+              />
+              <Legend wrapperStyle={{ fontSize: "12px", color: "#888" }} iconType="circle" />
+              {subjects.map(s => (
+                <Line 
+                  key={s.id} 
+                  type="monotone" 
+                  dataKey={s.name} 
+                  stroke={s.color} 
+                  strokeWidth={2}
+                  dot={{ r: 3, strokeWidth: 2 }}
+                  activeDot={{ r: 5 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Heatmap */}

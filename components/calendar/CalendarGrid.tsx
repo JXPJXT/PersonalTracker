@@ -35,11 +35,20 @@ interface TimeEntryData {
   subject: { id: string; name: string; color: string } | null;
 }
 
+interface TaskData {
+  id: string;
+  title: string;
+  priority: string;
+  completed: boolean;
+  subject: Subject | null;
+}
+
 interface CalendarGridProps {
   weekStart: Date;
   entries: TimeEntryData[];
   userId: string;
   subjects: Subject[];
+  tasks: TaskData[];
   onRefresh: () => void;
 }
 
@@ -48,6 +57,7 @@ export default function CalendarGrid({
   entries,
   userId,
   subjects,
+  tasks,
   onRefresh,
 }: CalendarGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -245,6 +255,7 @@ export default function CalendarGrid({
         <EntryDetailModal
           entry={selectedEntry}
           subjects={subjects}
+          tasks={tasks}
           onClose={() => setSelectedEntry(null)}
           onUpdated={() => {
             setSelectedEntry(null);

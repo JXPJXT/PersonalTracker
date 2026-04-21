@@ -6,6 +6,7 @@ import {
   updateTask,
   deleteTask,
   getTasks,
+  getTimeForTask,
 } from "@/lib/actions";
 import {
   Plus,
@@ -18,13 +19,29 @@ import {
   ListTodo,
   StickyNote,
   ArrowUpDown,
+  Clock,
+  Link2,
+  Timer,
 } from "lucide-react";
 import { format, isPast, isToday, isTomorrow, parseISO } from "date-fns";
+import { formatHoursMinutes } from "@/lib/utils";
 
 interface Subject {
   id: string;
   name: string;
   color: string;
+}
+
+interface SessionLinkData {
+  id: string;
+  timeEntry: {
+    id: number;
+    description: string;
+    start: string;
+    stop: string | null;
+    durationInSeconds: number | null;
+    subject: Subject | null;
+  };
 }
 
 interface TaskData {
@@ -35,9 +52,12 @@ interface TaskData {
   dueDate: string | null;
   completed: boolean;
   completedAt: string | null;
+  autoCompleteHours: number | null;
   subjectId: string | null;
   subject: Subject | null;
   createdAt: string;
+  sessionLinks: SessionLinkData[];
+  totalTimeLogged: number; // seconds
 }
 
 interface TasksClientProps {
@@ -71,6 +91,7 @@ export default function TasksClient({
   const [priority, setPriority] = useState("MEDIUM");
   const [dueDate, setDueDate] = useState("");
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [autoCompleteHours, setAutoCompleteHours] = useState("");
 
   // Edit task
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -79,6 +100,7 @@ export default function TasksClient({
   const [editPriority, setEditPriority] = useState("MEDIUM");
   const [editDueDate, setEditDueDate] = useState("");
   const [editSubjectId, setEditSubjectId] = useState<string | null>(null);
+  const [editAutoCompleteHours, setEditAutoCompleteHours] = useState("");
 
   // Sort
   const [sortField, setSortField] = useState<SortField>("priority");
@@ -86,22 +108,45 @@ export default function TasksClient({
 
   const refreshTasks = async () => {
     const fresh = await getTasks(userId);
-    setTasks(
-      fresh.map((t) => ({
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        priority: t.priority,
-        dueDate: t.dueDate?.toISOString() || null,
-        completed: t.completed,
-        completedAt: t.completedAt?.toISOString() || null,
-        subjectId: t.subjectId,
-        subject: t.subject
-          ? { id: t.subject.id, name: t.subject.name, color: t.subject.color }
-          : null,
-        createdAt: t.createdAt.toISOString(),
-      }))
+    const tasksWithTime = await Promise.all(
+      fresh.map(async (t) => {
+        const totalTime = await getTimeForTask(t.id);
+        return {
+          id: t.id,
+          title: t.title,
+          description: t.description,
+          priority: t.priority,
+          dueDate: t.dueDate?.toISOString() || null,
+          completed: t.completed,
+          completedAt: t.completedAt?.toISOString() || null,
+          autoCompleteHours: t.autoCompleteHours,
+          subjectId: t.subjectId,
+          subject: t.subject
+            ? { id: t.subject.id, name: t.subject.name, color: t.subject.color }
+            : null,
+          createdAt: t.createdAt.toISOString(),
+          sessionLinks: t.sessionLinks.map((l) => ({
+            id: l.id,
+            timeEntry: {
+              id: Number(l.timeEntry.id),
+              description: l.timeEntry.description,
+              start: l.timeEntry.start.toISOString(),
+              stop: l.timeEntry.stop?.toISOString() || null,
+              durationInSeconds: l.timeEntry.durationInSeconds,
+              subject: l.timeEntry.subject
+                ? {
+                    id: l.timeEntry.subject.id,
+                    name: l.timeEntry.subject.name,
+                    color: l.timeEntry.subject.color,
+                  }
+                : null,
+            },
+          })),
+          totalTimeLogged: totalTime,
+        };
+      })
     );
+    setTasks(tasksWithTime);
   };
 
   const sortedTasks = useMemo(() => {
@@ -145,6 +190,7 @@ export default function TasksClient({
         dueDate: dueDate || null,
         subjectId,
         userId,
+        autoCompleteHours: autoCompleteHours ? parseFloat(autoCompleteHours) : null,
       });
       await refreshTasks();
       setTitle("");
@@ -152,6 +198,7 @@ export default function TasksClient({
       setPriority("MEDIUM");
       setDueDate("");
       setSubjectId(null);
+      setAutoCompleteHours("");
       setShowForm(false);
     });
   };
@@ -172,6 +219,9 @@ export default function TasksClient({
         priority: editPriority,
         dueDate: editDueDate || null,
         subjectId: editSubjectId,
+        autoCompleteHours: editAutoCompleteHours
+          ? parseFloat(editAutoCompleteHours)
+          : null,
       });
       await refreshTasks();
       setEditingId(null);
@@ -192,6 +242,9 @@ export default function TasksClient({
     setEditPriority(task.priority);
     setEditDueDate(task.dueDate ? task.dueDate.split("T")[0] : "");
     setEditSubjectId(task.subjectId);
+    setEditAutoCompleteHours(
+      task.autoCompleteHours ? String(task.autoCompleteHours) : ""
+    );
   };
 
   const toggleSort = (field: SortField) => {
@@ -327,6 +380,26 @@ export default function TasksClient({
               </div>
             </div>
 
+            {/* Auto-complete hours */}
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">
+                <Timer size={11} className="inline mr-1" />
+                Auto-complete after (hours)
+              </label>
+              <input
+                type="number"
+                value={autoCompleteHours}
+                onChange={(e) => setAutoCompleteHours(e.target.value)}
+                className="input-field text-sm w-32"
+                placeholder="e.g. 5"
+                min="0.5"
+                step="0.5"
+              />
+              <p className="text-[10px] text-gray-600 mt-1">
+                Task will auto-complete after this many hours of linked sessions
+              </p>
+            </div>
+
             {/* Subject */}
             <div>
               <label className="text-xs text-gray-400 mb-1.5 block">Subject</label>
@@ -384,6 +457,10 @@ export default function TasksClient({
           const dueDateLabel = getDueDateLabel(task.dueDate);
           const isExpanded = expandedId === task.id;
           const isEditing = editingId === task.id;
+          const timeLogged = task.totalTimeLogged;
+          const autoProgress = task.autoCompleteHours
+            ? Math.min(100, (timeLogged / (task.autoCompleteHours * 3600)) * 100)
+            : null;
 
           return (
             <div
@@ -445,7 +522,36 @@ export default function TasksClient({
                     {task.description && (
                       <StickyNote size={10} className="text-gray-600" />
                     )}
+                    {/* Time logged indicator */}
+                    {timeLogged > 0 && (
+                      <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                        <Clock size={9} />
+                        {formatHoursMinutes(timeLogged)}
+                      </span>
+                    )}
+                    {/* Session link count */}
+                    {task.sessionLinks.length > 0 && (
+                      <span className="text-[10px] text-gray-600 flex items-center gap-0.5">
+                        <Link2 size={9} />
+                        {task.sessionLinks.length}
+                      </span>
+                    )}
                   </div>
+
+                  {/* Auto-complete progress bar */}
+                  {autoProgress !== null && !task.completed && (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <div className="flex-1 h-1 bg-[#2a2a2a] rounded-full overflow-hidden max-w-[120px]">
+                        <div
+                          className="h-full bg-[#7c3aed] rounded-full transition-all duration-500"
+                          style={{ width: `${autoProgress}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-gray-600">
+                        {formatHoursMinutes(timeLogged)} / {task.autoCompleteHours}h
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Expand/Actions */}
@@ -521,6 +627,22 @@ export default function TasksClient({
                           />
                         </div>
                       </div>
+                      {/* Auto-complete hours edit */}
+                      <div>
+                        <label className="text-xs text-gray-400 mb-1 block">
+                          <Timer size={11} className="inline mr-1" />
+                          Auto-complete after (hours)
+                        </label>
+                        <input
+                          type="number"
+                          value={editAutoCompleteHours}
+                          onChange={(e) => setEditAutoCompleteHours(e.target.value)}
+                          className="input-field text-sm w-32"
+                          placeholder="e.g. 5"
+                          min="0.5"
+                          step="0.5"
+                        />
+                      </div>
                       <div>
                         <label className="text-xs text-gray-400 mb-1 block">Subject</label>
                         <div className="flex gap-2 flex-wrap">
@@ -592,6 +714,59 @@ export default function TasksClient({
                           Completed {format(parseISO(task.completedAt), "MMM d 'at' h:mm a")}
                         </div>
                       )}
+
+                      {/* Time tracking info */}
+                      {timeLogged > 0 && (
+                        <div className="mt-2 p-3 bg-[#1a1a1a] rounded-lg">
+                          <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
+                            <Clock size={12} />
+                            <span className="font-medium">
+                              Time logged: {formatHoursMinutes(timeLogged)}
+                            </span>
+                            {task.autoCompleteHours && (
+                              <span className="text-gray-600">
+                                / {task.autoCompleteHours}h target
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Linked sessions */}
+                          {task.sessionLinks.length > 0 && (
+                            <div className="space-y-1">
+                              {task.sessionLinks.map((link) => (
+                                <div
+                                  key={link.id}
+                                  className="flex items-center gap-2 text-[11px] text-gray-500"
+                                >
+                                  <Link2 size={9} />
+                                  <span className="truncate">
+                                    {link.timeEntry.description || "Session"}
+                                  </span>
+                                  <span className="text-gray-600">
+                                    {link.timeEntry.durationInSeconds
+                                      ? formatHoursMinutes(link.timeEntry.durationInSeconds)
+                                      : "in progress"}
+                                  </span>
+                                  <span className="text-gray-700">
+                                    {format(
+                                      parseISO(link.timeEntry.start),
+                                      "MMM d"
+                                    )}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {task.autoCompleteHours && !task.completed && (
+                        <div className="text-[10px] text-gray-600 flex items-center gap-1">
+                          <Timer size={10} />
+                          Auto-completes after {task.autoCompleteHours}h logged
+                        </div>
+                      )}
+
                       <button
                         onClick={() => startEdit(task)}
                         className="text-xs text-[#7c3aed] hover:underline mt-1"

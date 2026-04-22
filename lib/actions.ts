@@ -22,22 +22,38 @@ export async function getUser() {
     const email = (sessionClaims?.email as string) || `${userId}@example.com`;
     const name = (sessionClaims?.firstName as string) || "Student";
     
-    user = await prisma.user.create({
-      data: {
-        id: userId,
-        name: name,
-        email: email,
-        subjects: {
-          create: [
-            { name: "Mathematics", color: "#7c3aed" },
-            { name: "Physics", color: "#2563eb" },
-            { name: "Chemistry", color: "#16a34a" },
-            { name: "Programming", color: "#ea580c" },
-          ],
-        },
-      },
-      include: { subjects: true },
+    // Check if a user with this email already exists (e.g., from dev or recreated account)
+    const existingUserByEmail = await prisma.user.findUnique({
+      where: { email },
     });
+
+    if (existingUserByEmail) {
+      // Update the existing user's ID to the new Clerk ID
+      // Prisma's default ON UPDATE CASCADE handles the foreign key updates
+      user = await prisma.user.update({
+        where: { email },
+        data: { id: userId, name },
+        include: { subjects: true },
+      });
+    } else {
+      // Create a brand new user
+      user = await prisma.user.create({
+        data: {
+          id: userId,
+          name: name,
+          email: email,
+          subjects: {
+            create: [
+              { name: "Mathematics", color: "#7c3aed" },
+              { name: "Physics", color: "#2563eb" },
+              { name: "Chemistry", color: "#16a34a" },
+              { name: "Programming", color: "#ea580c" },
+            ],
+          },
+        },
+        include: { subjects: true },
+      });
+    }
   }
 
   return user;

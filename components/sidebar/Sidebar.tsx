@@ -176,7 +176,7 @@ export default function Sidebar({
             id="logout-btn"
             size={14}
             className="text-gray-500 cursor-pointer hover:text-red-400 transition-colors"
-            onClick={() => logout()}
+            onClick={() => signOut()}
           />
         </div>
       </div>

@@ -2,11 +2,16 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher(["/login(.*)", "/api/upload(.*)"]);
 
-export default clerkMiddleware(async (auth, request) => {
+const clerkHandler = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
 });
+
+// Next.js 16 requires the exported function to be named "proxy"
+export function proxy(...args: Parameters<typeof clerkHandler>) {
+  return clerkHandler(...args);
+}
 
 export const config = {
   matcher: [

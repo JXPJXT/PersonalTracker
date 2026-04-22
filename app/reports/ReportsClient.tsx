@@ -96,7 +96,7 @@ export default function ReportsClient({
 
   // Weekly trend logic (last 6 weeks)
   const lineChartData = useMemo(() => {
-    const data = [];
+    const data: Array<Record<string, string | number>> = [];
     const weeksToShow = 6;
     for (let i = weeksToShow - 1; i >= 0; i--) {
       const wStart = subDays(weekStart, i * 7);
@@ -105,7 +105,7 @@ export default function ReportsClient({
       
       const weekPeriodEntries = entries.filter(e => isWithinInterval(new Date(e.start), {start: wStart, end: wEnd}));
       
-      const weekEntryObj: Record<string, any> = { name: weekLabel };
+      const weekEntryObj: Record<string, string | number> = { name: weekLabel };
       
       // Ensure all subjects explicitly exist so lines drawn continuously 
       subjects.forEach(s => {

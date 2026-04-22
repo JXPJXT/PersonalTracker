@@ -11,7 +11,7 @@ interface BlockEditorProps {
 }
 
 export default function BlockEditor({ initialContent, onChange }: BlockEditorProps) {
-  let initialBlocks = undefined;
+  let initialBlocks: any = undefined;
   try {
     if (initialContent && initialContent.trim() !== "") {
       const parsed = JSON.parse(initialContent);

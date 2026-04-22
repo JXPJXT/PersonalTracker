@@ -37,6 +37,7 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const store = useTimerStore();
+  const { signOut } = useClerk();
   const [showSettings, setShowSettings] = useState(false);
 
   const userName = user?.name || "User";

@@ -134,7 +134,7 @@ export default function FlashcardsClient({
     );
     const freshDue = await getDueFlashcards(userId);
     setDueCards(
-      freshDue.map((c) => ({
+      freshDue.map((c: any) => ({
         id: c.id,
         front: c.front,
         back: c.back,

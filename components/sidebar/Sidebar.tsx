@@ -22,7 +22,7 @@ import { useTimerStore } from "@/lib/store";
 import GoalWidget from "./GoalWidget";
 import SettingsModal from "./SettingsModal";
 import { useState } from "react";
-import { logout } from "@/lib/auth";
+import { useClerk } from "@clerk/nextjs";
 
 export default function Sidebar({ 
   user,

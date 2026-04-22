@@ -114,14 +114,14 @@ export default function ReportsClient({
 
       for(const entry of weekPeriodEntries) {
          if (entry.subject) {
-            const current = weekEntryObj[entry.subject.name] || 0;
+            const current = (weekEntryObj[entry.subject.name] as number) || 0;
             weekEntryObj[entry.subject.name] = current + (entry.durationInSeconds || 0) / 3600;
          }
       }
       
       // Round everything to 1 decimal
       subjects.forEach(s => {
-        weekEntryObj[s.name] = Math.round(weekEntryObj[s.name] * 10) / 10;
+        weekEntryObj[s.name] = Math.round((weekEntryObj[s.name] as number) * 10) / 10;
       });
 
       data.push(weekEntryObj);

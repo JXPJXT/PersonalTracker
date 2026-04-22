@@ -9,7 +9,7 @@ export default async function ReportsPage() {
 
   const entries = await getAllEntries(user.id);
 
-  const serialized = entries.map((e) => ({
+  const serialized = entries.map((e: any) => ({
     id: e.id,
     description: e.description,
     start: e.start.toISOString(),
@@ -21,7 +21,7 @@ export default async function ReportsPage() {
       : null,
   }));
 
-  const subjects = user.subjects.map((s) => ({
+  const subjects = user.subjects.map((s: any) => ({
     id: s.id,
     name: s.name,
     color: s.color,

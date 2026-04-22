@@ -10,7 +10,7 @@ export default async function FlashcardsPage() {
   const decks = await getFlashcardDecks(user.id);
   const dueCards = await getDueFlashcards(user.id);
 
-  const serializedDecks = decks.map((d) => ({
+  const serializedDecks = decks.map((d: any) => ({
     id: d.id,
     name: d.name,
     subjectId: d.subjectId,
@@ -18,7 +18,7 @@ export default async function FlashcardsPage() {
       ? { id: d.subject.id, name: d.subject.name, color: d.subject.color }
       : null,
     cardCount: d._count.cards,
-    cards: d.cards.map((c) => ({
+    cards: d.cards.map((c: any) => ({
       id: c.id,
       front: c.front,
       back: c.back,
@@ -30,7 +30,7 @@ export default async function FlashcardsPage() {
     })),
   }));
 
-  const serializedDueCards = dueCards.map((c) => ({
+  const serializedDueCards = dueCards.map((c: any) => ({
     id: c.id,
     front: c.front,
     back: c.back,
@@ -44,7 +44,7 @@ export default async function FlashcardsPage() {
     nextReview: c.nextReview.toISOString(),
   }));
 
-  const subjects = user.subjects.map((s) => ({
+  const subjects = user.subjects.map((s: any) => ({
     id: s.id,
     name: s.name,
     color: s.color,

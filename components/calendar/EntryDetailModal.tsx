@@ -78,7 +78,7 @@ export default function EntryDetailModal({
       try {
         const linked = await getTasksForSession(entry.id);
         setLinkedTasks(
-          linked.map((t) => ({
+          linked.map((t: any) => ({
             id: t.id,
             title: t.title,
             priority: t.priority,

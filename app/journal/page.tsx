@@ -8,7 +8,7 @@ export default async function JournalPage() {
   const user = await getUser();
 
   const logs = await getDailyLogs(user.id);
-  const serialized = logs.map((l) => ({
+  const serialized = logs.map((l: any) => ({
     id: l.id,
     date: l.date,
     content: l.content,

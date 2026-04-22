@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   ]);
 
   // Pass necessary data to the dashboard
-  const activeTasks = allTasks.filter(t => !t.completed).map((t) => ({
+  const activeTasks = allTasks.filter((t: any) => !t.completed).map((t: any) => ({
     id: t.id,
     title: t.title,
     priority: t.priority,
@@ -26,14 +26,14 @@ export default async function DashboardPage() {
       : null,
   })).slice(0, 10); // Show up to 10 tasks
   
-  const serializedDueCards = dueCards.map(c => ({
+  const serializedDueCards = dueCards.map((c: any) => ({
     id: c.id,
     deckName: c.deck.name,
     subjectColor: c.deck.subject?.color || "#666"
   }));
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayJournal = dailyLogs.find(l => l.date === todayStr);
+  const todayJournal = dailyLogs.find((l: any) => l.date === todayStr);
 
   return (
     <DashboardClient 

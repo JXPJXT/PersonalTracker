@@ -374,7 +374,7 @@ function SleepTracker({ userId, initialLogs }: { userId: string, initialLogs: Sl
   const refreshData = async () => {
     const fresh = await getSleepLogs(userId, 30);
     setLogs(
-      fresh.map((l) => ({
+      fresh.map((l: any) => ({
         id: l.id,
         date: l.date,
         wakeTime: l.wakeTime,

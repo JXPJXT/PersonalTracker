@@ -93,7 +93,7 @@ export default function JournalClient({
       });
       const freshLogs = await getDailyLogs(userId);
       setLogs(
-        freshLogs.map((l) => ({
+        freshLogs.map((l: any) => ({
           ...l,
         }))
       );

@@ -85,7 +85,7 @@ export default function ResourcesClient({
   const refreshData = async () => {
     const fresh = await getResources(userId);
     setResources(
-      fresh.map((r) => ({
+      fresh.map((r: any) => ({
         id: r.id,
         title: r.title,
         url: r.url,
@@ -96,14 +96,14 @@ export default function ResourcesClient({
           ? { id: r.subject.id, name: r.subject.name, color: r.subject.color }
           : null,
         createdAt: r.createdAt.toISOString(),
-        linksFrom: r.linksFrom.map((l) => ({
+        linksFrom: r.linksFrom.map((l: any) => ({
           id: l.id,
           toId: l.toResourceId,
           toTitle: l.toResource.title,
           toColor: l.toResource.subject?.color || "#666",
           label: l.label,
         })),
-        linksTo: r.linksTo.map((l) => ({
+        linksTo: r.linksTo.map((l: any) => ({
           id: l.id,
           fromId: l.fromResourceId,
           fromTitle: l.fromResource.title,

@@ -109,7 +109,7 @@ export default function TasksClient({
   const refreshTasks = async () => {
     const fresh = await getTasks(userId);
     const tasksWithTime = await Promise.all(
-      fresh.map(async (t) => {
+      fresh.map(async (t: any) => {
         const totalTime = await getTimeForTask(t.id);
         return {
           id: t.id,
@@ -125,7 +125,7 @@ export default function TasksClient({
             ? { id: t.subject.id, name: t.subject.name, color: t.subject.color }
             : null,
           createdAt: t.createdAt.toISOString(),
-          sessionLinks: t.sessionLinks.map((l) => ({
+          sessionLinks: t.sessionLinks.map((l: any) => ({
             id: l.id,
             timeEntry: {
               id: Number(l.timeEntry.id),

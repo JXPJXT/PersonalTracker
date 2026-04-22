@@ -55,7 +55,7 @@ export default function SubjectsClient({
   const refreshSubjects = async () => {
     const fresh = await getSubjects(userId);
     setSubjects(
-      fresh.map((s) => ({
+      fresh.map((s: any) => ({
         id: s.id,
         name: s.name,
         color: s.color,

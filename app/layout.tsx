@@ -87,7 +87,7 @@ export default async function RootLayout({
               {children}
             </main>
             <FocusModeWrapper
-              subjects={user.subjects.map((s) => ({
+              subjects={user.subjects.map((s: any) => ({
                 id: s.id,
                 name: s.name,
                 color: s.color,

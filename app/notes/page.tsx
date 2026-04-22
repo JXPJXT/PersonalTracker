@@ -8,7 +8,7 @@ export default async function NotesPage() {
   const user = await getUser();
 
   const notes = await getNotes(user.id);
-  const serialized = notes.map((n) => ({
+  const serialized = notes.map((n: any) => ({
     id: n.id,
     title: n.title,
     icon: n.icon,

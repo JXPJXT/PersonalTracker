@@ -12,7 +12,7 @@ export default async function HabitsPage() {
     getHabits(user.id),
   ]);
 
-  const serializedSleep = sleepLogs.map((l) => ({
+  const serializedSleep = sleepLogs.map((l: any) => ({
     id: l.id,
     date: l.date,
     wakeTime: l.wakeTime,
@@ -21,14 +21,14 @@ export default async function HabitsPage() {
     notes: l.notes,
   }));
 
-  const serializedHabits = habits.map((h) => ({
+  const serializedHabits = habits.map((h: any) => ({
     id: h.id,
     name: h.name,
     icon: h.icon,
     color: h.color,
     target: h.target,
     unit: h.unit,
-    entries: h.entries.map((e) => ({
+    entries: h.entries.map((e: any) => ({
       date: e.date,
       value: e.value,
     })),

@@ -9,7 +9,7 @@ export default async function SubjectsPage() {
 
   const subjects = await getSubjects(user.id);
 
-  const serialized = subjects.map((s) => ({
+  const serialized = subjects.map((s: any) => ({
     id: s.id,
     name: s.name,
     color: s.color,

@@ -10,7 +10,7 @@ export default async function TasksPage() {
   const tasks = await getTasks(user.id);
 
   const serialized = await Promise.all(
-    tasks.map(async (t) => {
+    tasks.map(async (t: any) => {
       const totalTime = await getTimeForTask(t.id);
       return {
         id: t.id,
@@ -26,7 +26,7 @@ export default async function TasksPage() {
           ? { id: t.subject.id, name: t.subject.name, color: t.subject.color }
           : null,
         createdAt: t.createdAt.toISOString(),
-        sessionLinks: t.sessionLinks.map((l) => ({
+        sessionLinks: t.sessionLinks.map((l: any) => ({
           id: l.id,
           timeEntry: {
             id: Number(l.timeEntry.id),
@@ -48,7 +48,7 @@ export default async function TasksPage() {
     })
   );
 
-  const subjects = user.subjects.map((s) => ({
+  const subjects = user.subjects.map((s: any) => ({
     id: s.id,
     name: s.name,
     color: s.color,

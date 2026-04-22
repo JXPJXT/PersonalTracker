@@ -8,7 +8,7 @@ export default async function ResourcesPage() {
   const user = await getUser();
 
   const resources = await getResources(user.id);
-  const serialized = resources.map((r) => ({
+  const serialized = resources.map((r: any) => ({
     id: r.id,
     title: r.title,
     url: r.url,
@@ -19,14 +19,14 @@ export default async function ResourcesPage() {
       ? { id: r.subject.id, name: r.subject.name, color: r.subject.color }
       : null,
     createdAt: r.createdAt.toISOString(),
-    linksFrom: r.linksFrom.map((l) => ({
+    linksFrom: r.linksFrom.map((l: any) => ({
       id: l.id,
       toId: l.toResourceId,
       toTitle: l.toResource.title,
       toColor: l.toResource.subject?.color || "#666",
       label: l.label,
     })),
-    linksTo: r.linksTo.map((l) => ({
+    linksTo: r.linksTo.map((l: any) => ({
       id: l.id,
       fromId: l.fromResourceId,
       fromTitle: l.fromResource.title,
@@ -35,7 +35,7 @@ export default async function ResourcesPage() {
     })),
   }));
 
-  const subjects = user.subjects.map((s) => ({
+  const subjects = user.subjects.map((s: any) => ({
     id: s.id,
     name: s.name,
     color: s.color,

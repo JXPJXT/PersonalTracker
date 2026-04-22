@@ -23,7 +23,7 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
     parentId: note.parentId,
     updatedAt: note.updatedAt.toISOString(),
     parent: note.parent ? { id: note.parent.id, title: note.parent.title } : null,
-    children: note.children.map(c => ({
+    children: note.children.map((c: any) => ({
       id: c.id,
       title: c.title,
       icon: c.icon,

@@ -1,0 +1,56 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# package lock variants (optional to track, but often ignored inside mono-repos. Keep package-lock.json tracked natively)
+# yarn.lock 
+# pnpm-lock.yaml
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# production & builds
+/build
+/dist
+
+# misc
+.DS_Store
+**/.DS_Store
+*.pem
+
+# compiled windows executables & desktop wrappers
+StudyTracker.exe
+crash-log.txt
+
+# local database files
+*.db
+*.db-journal
+dev.db
+dev.db-journal
+
+# user uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# debug & crash logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files (IMPORTANT: Never commit secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vercel & turbopack deployment folders
+.vercel
+.turbo

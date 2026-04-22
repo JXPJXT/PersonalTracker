@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String      @id @default(cuid())
+  name      String
+  email     String      @unique
+  createdAt DateTime    @default(now())
+  entries   TimeEntry[]
+  subjects  Subject[]
+  tasks     Task[]
+  flashcardDecks FlashcardDeck[]
+  goals     Goal[]
+  sleepLogs SleepLog[]
+  resources Resource[]
+  dailyLogs DailyLog[]
+  habits    Habit[]
+  notes     Note[]
+}
+
+model Subject {
+  id      String      @id @default(cuid())
+  name    String
+  color   String
+  userId  String
+  user    User        @relation(fields: [userId], references: [id])
+  entries TimeEntry[]
+  tasks   Task[]
+  flashcardDecks FlashcardDeck[]
+  resources Resource[]
+}
+
+model TimeEntry {
+  id                Int       @id @default(autoincrement())
+  description       String    @default("")
+  notes             String    @default("")
+  start             DateTime
+  stop              DateTime?
+  durationInSeconds Int?
+  subjectId         String?
+  subject           Subject?  @relation(fields: [subjectId], references: [id])
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  createdAt         DateTime  @default(now())
+  taskLinks         TaskSessionLink[]
+}
+
+model Task {
+  id                String    @id @default(cuid())
+  title             String
+  description       String    @default("")
+  priority          String    @default("MEDIUM")  // HIGH, MEDIUM, LOW
+  dueDate           DateTime?
+  completed         Boolean   @default(false)
+  completedAt       DateTime?
+  autoCompleteHours Float?    // Auto-complete task after X hours logged
+  subjectId         String?
+  subject           Subject?  @relation(fields: [subjectId], references: [id])
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  createdAt         DateTime  @default(now())
+  sessionLinks      TaskSessionLink[]
+}
+
+model TaskSessionLink {
+  id          String    @id @default(cuid())
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  timeEntryId Int
+  timeEntry   TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([taskId, timeEntryId])
+}
+
+model FlashcardDeck {
+  id        String      @id @default(cuid())
+  name      String
+  subjectId String?
+  subject   Subject?    @relation(fields: [subjectId], references: [id])
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  cards     Flashcard[]
+  createdAt DateTime    @default(now())
+}
+
+model Flashcard {
+  id          String    @id @default(cuid())
+  front       String
+  back        String
+  deckId      String
+  deck        FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  // Spaced repetition fields
+  ease        Float     @default(2.5)  // Ease factor
+  interval    Int       @default(0)    // Days until next review
+  repetitions Int       @default(0)    // Number of successful reviews
+  nextReview  DateTime  @default(now())
+  lastReview  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  type        String   // "DAILY" | "WEEKLY"
+  targetHours Float
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, type])
+}
+
+// ─── Sleep/Wake Tracking ───────────────────────────────────────
+
+model SleepLog {
+  id        String   @id @default(cuid())
+  date      String   // YYYY-MM-DD format for unique per day
+  wakeTime  String   // HH:mm format
+  sleepTime String   // HH:mm format (when went to bed previous night)
+  quality   Int      @default(3) // 1-5 rating
+  notes     String   @default("")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+// ─── Resources / Knowledge Map ─────────────────────────────────
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  url         String   @default("")
+  description String   @default("")
+  tags        String   @default("") // comma-separated
+  subjectId   String?
+  subject     Subject? @relation(fields: [subjectId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linksFrom   ResourceLink[] @relation("fromResource")
+  linksTo     ResourceLink[] @relation("toResource")
+  createdAt   DateTime @default(now())
+}
+
+model ResourceLink {
+  id             String   @id @default(cuid())
+  fromResourceId String
+  fromResource   Resource @relation("fromResource", fields: [fromResourceId], references: [id], onDelete: Cascade)
+  toResourceId   String
+  toResource     Resource @relation("toResource", fields: [toResourceId], references: [id], onDelete: Cascade)
+  label          String   @default("")
+  createdAt      DateTime @default(now())
+
+  @@unique([fromResourceId, toResourceId])
+}
+
+// ─── Daily Journal ─────────────────────────────────────────────
+
+model DailyLog {
+  id             String   @id @default(cuid())
+  date           String   // YYYY-MM-DD
+  content        String   @default("") // What I did today (markdown)
+  mood           Int      @default(3) // 1-5 (1=terrible, 5=amazing)
+  productivity   Int      @default(3) // 1-5 rating
+  highlights     String   @default("") // Comma-separated wins
+  improvements   String   @default("") // What could be better
+  gratitude      String   @default("") // What I'm grateful for
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+// ─── Habit Tracking ────────────────────────────────────────────
+
+model Habit {
+  id        String       @id @default(cuid())
+  name      String
+  icon      String       @default("⭐") // Emoji icon
+  color     String       @default("#7c3aed")
+  target    Int          @default(1) // target per day (e.g. 8 glasses of water)
+  unit      String       @default("") // e.g. "glasses", "minutes", "pages"
+  archived  Boolean      @default(false)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   HabitEntry[]
+  createdAt DateTime     @default(now())
+}
+
+model HabitEntry {
+  id       String   @id @default(cuid())
+  date     String   // YYYY-MM-DD
+  value    Int      @default(1) // How many times completed
+  habitId  String
+  habit    Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
+}
+
+// ─── Notion-Style Notes ────────────────────────────────────────
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String   @default("Untitled")
+  icon      String?  // Emoji or URL
+  cover     String?  // Cover image URL
+  content   String   @default("[]") // JSON string of BlockNote blocks
+  parentId  String?  // For nested pages hierarchy
+  parent    Note?    @relation("NoteHierarchy", fields: [parentId], references: [id])
+  children  Note[]   @relation("NoteHierarchy")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

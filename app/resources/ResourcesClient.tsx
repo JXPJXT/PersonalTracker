@@ -21,6 +21,7 @@ import {
   Tag,
   Map,
   List,
+  X,
 } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 

@@ -3,25 +3,30 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-// ─── User (HARDCODED — no login required) ──────────────────────
-
-const HARDCODED_USER = {
-  name: "jxpjxt",
-  email: "bhatiajapjotjpr@gmail.com",
-};
+import { auth } from "@clerk/nextjs/server";
 
 export async function getUser() {
-  // Always return the hardcoded user, auto-create if DB is empty
-  let user = await prisma.user.findFirst({
-    where: { email: HARDCODED_USER.email },
+  const { userId, sessionClaims } = await auth();
+  
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Always return the authenticated user, auto-create if DB is empty
+  let user = await prisma.user.findUnique({
+    where: { id: userId },
     include: { subjects: true },
   });
 
   if (!user) {
+    const email = (sessionClaims?.email as string) || `${userId}@example.com`;
+    const name = (sessionClaims?.firstName as string) || "Student";
+    
     user = await prisma.user.create({
       data: {
-        name: HARDCODED_USER.name,
-        email: HARDCODED_USER.email,
+        id: userId,
+        name: name,
+        email: email,
         subjects: {
           create: [
             { name: "Mathematics", color: "#7c3aed" },
@@ -35,7 +40,7 @@ export async function getUser() {
     });
   }
 
-  return user; // This ALWAYS returns a user — never null
+  return user;
 }
 
 // ─── Subjects ──────────────────────────────────────────────────

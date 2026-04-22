@@ -19,6 +19,8 @@ export const viewport = {
   maximumScale: 1,
 };
 
+import { ClerkProvider } from "@clerk/nextjs";
+
 export default async function RootLayout({
   children,
 }: {
@@ -29,21 +31,23 @@ export default async function RootLayout({
   // If not logged in, render children directly (login page)
   if (!authed) {
     return (
-      <html lang="en">
-        <head>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossOrigin="anonymous"
-          />
-          <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-            rel="stylesheet"
-          />
-        </head>
-        <body>{children}</body>
-      </html>
+      <ClerkProvider>
+        <html lang="en">
+          <head>
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link
+              rel="preconnect"
+              href="https://fonts.gstatic.com"
+              crossOrigin="anonymous"
+            />
+            <link
+              href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+              rel="stylesheet"
+            />
+          </head>
+          <body>{children}</body>
+        </html>
+      </ClerkProvider>
     );
   }
 
@@ -57,39 +61,41 @@ export default async function RootLayout({
   ]);
 
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>
-        <div className="flex h-screen">
-          <Sidebar
-            user={user}
-            goals={goals}
-            initialTodayTime={todayTime}
-            initialWeekTime={weekTime}
+    <ClerkProvider>
+      <html lang="en">
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossOrigin="anonymous"
           />
-          <main className="flex-1 ml-[185px] flex flex-col h-screen overflow-hidden">
-            {children}
-          </main>
-          <FocusModeWrapper
-            subjects={user.subjects.map((s) => ({
-              id: s.id,
-              name: s.name,
-              color: s.color,
-            }))}
+          <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
           />
-        </div>
-      </body>
-    </html>
+        </head>
+        <body>
+          <div className="flex h-screen">
+            <Sidebar
+              user={user}
+              goals={goals}
+              initialTodayTime={todayTime}
+              initialWeekTime={weekTime}
+            />
+            <main className="flex-1 ml-[185px] flex flex-col h-screen overflow-hidden">
+              {children}
+            </main>
+            <FocusModeWrapper
+              subjects={user.subjects.map((s) => ({
+                id: s.id,
+                name: s.name,
+                color: s.color,
+              }))}
+            />
+          </div>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

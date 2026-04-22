@@ -1,124 +1,41 @@
-"use client";
-
-import { useState } from "react";
-import { login } from "@/lib/auth";
-import { useRouter } from "next/navigation";
-import { BookOpen, Eye, EyeOff, Lock, User } from "lucide-react";
+import { SignIn } from "@clerk/nextjs";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim() || !password.trim()) return;
-
-    setLoading(true);
-    setError("");
-
-    const result = await login(username.trim(), password.trim());
-
-    if (result.success) {
-      router.push("/");
-      router.refresh();
-    } else {
-      setError(result.error || "Login failed");
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="login-page">
-      {/* Animated background orbs */}
-      <div className="login-orb login-orb-1" />
-      <div className="login-orb login-orb-2" />
-      <div className="login-orb login-orb-3" />
-
-      <div className="login-container">
-        {/* Logo */}
-        <div className="login-logo">
-          <div className="login-logo-icon">
-            <BookOpen size={28} strokeWidth={2.5} />
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background gradients */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#7c3aed] rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#2563eb] rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-pulse" style={{ animationDelay: "2s" }}></div>
+      
+      <div className="relative z-10 w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#7c3aed] to-[#2563eb] mb-6 shadow-lg shadow-indigo-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-white">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+            </svg>
           </div>
-          <h1 className="login-title">StudyTrack</h1>
-          <p className="login-subtitle">Track your study sessions</p>
+          <h1 className="text-3xl font-bold text-white mb-2">StudyTrack</h1>
+          <p className="text-gray-400">Your Ultimate Second Brain</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="login-form">
-          {/* Username */}
-          <div className="login-field">
-            <label className="login-label">Username</label>
-            <div className="login-input-wrapper">
-              <User size={16} className="login-input-icon" />
-              <input
-                id="login-username"
-                type="text"
-                className="login-input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                autoFocus
-                autoComplete="username"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div className="login-field">
-            <label className="login-label">Password</label>
-            <div className="login-input-wrapper">
-              <Lock size={16} className="login-input-icon" />
-              <input
-                id="login-password"
-                type={showPassword ? "text" : "password"}
-                className="login-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                required
-              />
-              <button
-                type="button"
-                className="login-eye-btn"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="login-error">
-              <span>⚠</span> {error}
-            </div>
-          )}
-
-          {/* Submit */}
-          <button
-            id="login-submit"
-            type="submit"
-            disabled={loading || !username.trim() || !password.trim()}
-            className="login-btn"
-          >
-            {loading ? (
-              <span className="login-spinner" />
-            ) : null}
-            {loading ? "Signing in…" : "Sign In"}
-          </button>
-        </form>
-
-        <p className="login-footer">
-          Your data is stored locally &mdash; never sent anywhere.
-        </p>
+        <div className="flex justify-center">
+          <SignIn appearance={{
+            elements: {
+              formButtonPrimary: 'bg-[#7c3aed] hover:bg-[#6d28d9] text-sm normal-case',
+              card: 'bg-[#1a1a1a] border border-[#2a2a2a] shadow-2xl',
+              headerTitle: 'text-white',
+              headerSubtitle: 'text-gray-400',
+              socialButtonsBlockButton: 'border-[#333] hover:bg-[#222] text-white',
+              socialButtonsBlockButtonText: 'text-white',
+              dividerLine: 'bg-[#333]',
+              dividerText: 'text-gray-500',
+              formFieldLabel: 'text-gray-300',
+              formFieldInput: 'bg-[#222] border-[#333] text-white focus:border-[#7c3aed]',
+              footerActionText: 'text-gray-400',
+              footerActionLink: 'text-[#7c3aed] hover:text-[#6d28d9]'
+            }
+          }} />
+        </div>
       </div>
     </div>
   );

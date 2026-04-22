@@ -112,7 +112,7 @@ export default function FlashcardsClient({
   const refreshData = async () => {
     const freshDecks = await getFlashcardDecks(userId);
     setDecks(
-      freshDecks.map((d) => ({
+      freshDecks.map((d: any) => ({
         id: d.id,
         name: d.name,
         subjectId: d.subjectId,
@@ -120,7 +120,7 @@ export default function FlashcardsClient({
           ? { id: d.subject.id, name: d.subject.name, color: d.subject.color }
           : null,
         cardCount: d._count.cards,
-        cards: d.cards.map((c) => ({
+        cards: d.cards.map((c: any) => ({
           id: c.id,
           front: c.front,
           back: c.back,

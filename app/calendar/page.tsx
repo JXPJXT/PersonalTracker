@@ -17,7 +17,7 @@ export default async function HomePage() {
     getTasks(user.id),
   ]);
 
-  const serializedEntries = entries.map((e) => ({
+  const serializedEntries = entries.map((e: any) => ({
     ...e,
     start: e.start.toISOString(),
     stop: e.stop?.toISOString() || null,
@@ -26,13 +26,13 @@ export default async function HomePage() {
       : null,
   }));
 
-  const subjects = user.subjects.map((s) => ({
+  const subjects = user.subjects.map((s: any) => ({
     id: s.id,
     name: s.name,
     color: s.color,
   }));
 
-  const tasks = allTasks.map((t) => ({
+  const tasks = allTasks.map((t: any) => ({
     id: t.id,
     title: t.title,
     priority: t.priority,

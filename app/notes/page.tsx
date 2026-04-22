@@ -19,7 +19,7 @@ export default async function NotesPage() {
   }));
 
   // Build hierarchy tree
-  const rootNotes = serialized.filter((n) => !n.parentId);
+  const rootNotes = serialized.filter((n: any) => !n.parentId);
 
   return <NotesIndexClient userId={user.id} notes={serialized} rootNotes={rootNotes} />;
 }

@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+*.db
+*.db-journal
+.env
+.env.*
+.vercel
+.turbo
+StudyTracker.exe
+StudyTrackerLauncher.cs
+sjr.png
+crash-log.txt
